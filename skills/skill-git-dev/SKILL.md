@@ -1,64 +1,83 @@
 ---
 name: "skill-git-dev"
-description: "Git-based skill dev workflow: after approval and apply, commit changes to master."
+description: "Git-воркфлоу разработки скиллов: коммит, пуш, синхронизация Readme.md."
 ---
 
 # Skill Git Dev
 
-Covers the full development cycle for skills tracked in Git. Trigger: after user approves and applies a skill change during collaborative development.
+Полный цикл разработки скиллов, отслеживаемых в Git. Триггер: после того как Паша аппрувит и применит изменение скилла.
 
-## Prerequisites
+## Что нужно
 
-- Git repo cloned at `state/skills-repo/`
-- GitHub fine-grained token saved in `state/.github_token`
-- Git config in repo set:
+- Git-репа склонирована в `state/skills-repo/`
+- GitHub fine-grained токен лежит в `state/.github_token`
+- Git config в репе:
   - `user.name`: Clow
   - `user.email`: clow@openclaw.local
 
-## Workflow
+## Порядок действий
 
-### When to commit
+### Когда коммитить
 
-Commit after ALL of:
-1. User explicitly approves the skill change
-2. The skill is applied via `skill_workshop apply`
-3. User confirms the change is working (if testing was needed)
+Коммитить только после ВСЕХ трёх условий:
+1. Паша явно одобрил изменение скилла
+2. Скилл применён через `skill_workshop apply`
+3. Паша подтвердил, что изменение работает (если требовалось тестирование)
 
-Never commit before user approval.
+Никогда не коммитить без аппрува Паши.
 
-### Step 1: Sync skill files to repo
+### Шаг 1: Синхронизировать файлы скилла в репу
 
-Copy updated files from `workspace/skills/<name>/` to `state/skills-repo/skills/<name>/`:
+Скопировать обновлённые файлы из `workspace/skills/<имя>/` в `state/skills-repo/skills/<имя>/`:
 
-- `SKILL.md` always
-- `references/`, `scripts/`, `assets/` if they exist
+- `SKILL.md` — всегда
+- `references/`, `scripts/`, `assets/` — если есть
 
-### Step 2: Stage and commit
+### Шаг 1.5: Обновить Readme.md (только для новых скиллов)
+
+При добавлении **нового** скилла, которого раньше не было в репе:
+
+1. Прочитать существующий `state/skills-repo/Readme.md`
+2. Прочитать frontmatter нового скилла (`SKILL.md`) — извлечь `description`
+3. Добавить строку в таблицу скиллов в `Readme.md`, сохраняя алфавитный порядок:
+
+```markdown
+| `имя-скилла` | Описание из frontmatter SKILL.md |
+```
+
+4. Обновить блок с деревом директорий (список `├── skill-name/`), добавив новый скилл
+
+- Если скилл удаляется — убрать его строку из таблицы и дерева
+- Этот шаг только при создании или удалении скилла (не при обновлении существующего)
+
+### Шаг 2: Stage и коммит
 
 ```bash
 cd state/skills-repo
-git add skills/<name>/
-git commit -m "<imperative English description>"
+git add skills/<имя>/
+# Если Readme.md обновлялся:
+git add Readme.md
+git commit -m "<описание на английском>"
 ```
 
-### Step 3: Push
+### Шаг 3: Пуш
 
 ```bash
 git push origin master
 ```
 
-### Step 4: Report
+### Шаг 4: Ответ
 
-Reply with commit hash and summary: "Committed `<hash>`: `<message>`"
+Ответить с хешем коммита и саммари: «Коммит `<хеш>`: `<сообщение>`»
 
-## Commit message rules
+## Правила коммит-сообщений
 
-- Write in English
-- Use short imperative form (max 72 chars for summary line)
-- Describe WHAT changed: "add retry logic to yandex-reviews-analyzer", "update notion-task-create frontmatter"
-- If multiple skills changed in one session, commit each skill separately
+- Писать на английском
+- Короткий imperative формат (до 72 символов для заголовка)
+- Описывать ЧТО изменилось: "add retry logic to yandex-reviews-analyzer", "update notion-task-create frontmatter"
+- Если за сессию изменилось несколько скиллов — коммитить каждый отдельно
 
-## Notes
+## Заметки
 
-- Token is stored in `state/.github_token` (chmod 600), never expose it in logs or replies
-- Remote URL contains the token inline — keep repo directory private
+- Токен лежит в `state/.github_token` (chmod 600), никогда не светить его в логах или ответах
+- Remote URL содержит токен — держать директорию репы приватной

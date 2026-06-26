@@ -15,6 +15,8 @@
     ├── idea-reality-check/
     ├── notion-note-create/
     ├── notion-task-create/
+    ├── skill-git-dev/
+    ├── skill-git-sync/
     ├── yandex-reviews-analyzer/
     └── youtube-analyzer/
 ```
@@ -37,6 +39,8 @@
 | `idea-reality-check` | Проверка конкурентности идеи через `idea-reality-mcp`: GitHub, Hacker News, npm, PyPI, Product Hunt и Stack Overflow. |
 | `notion-note-create` | Создание заметок в Notion-датасорсе через raw Notion API. Поддерживает типы заметок и особый формат для списков покупок. |
 | `notion-task-create` | Создание задач в базе Notion через raw API с явным заполнением свойств. |
+| `skill-git-dev` | Git-воркфлоу разработки скиллов: коммит, пуш, синхронизация Readme.md. |
+| `skill-git-sync` | Sync skills from Git repo: pull master, install/update a skill by name. Trigger: актуализируй |
 | `yandex-reviews-analyzer` | Сбор и анализ негативных отзывов с Яндекс.Карт, сортировка по критичности и подготовка отчета. |
 | `youtube-analyzer` | Анализ YouTube-видео через Gemini/OpenRouter: транскрибация, саммари, сохранение результата в Notion и отправка ответа в Telegram. |
 
