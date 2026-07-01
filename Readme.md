@@ -12,6 +12,7 @@
 │   ├── ChatGPT.md
 │   └── OpenWebUI.md
 └── skills/
+    ├── diary/
     ├── idea-reality-check/
     ├── notion-note-create/
     ├── notion-task-create/
@@ -36,6 +37,7 @@
 
 | Навык | Для чего нужен |
 |---|---|
+| `diary` | Дневник через Notion Data Source: буфер записей, напоминалка 20:00 MSK, автосоздание заметки в 22:00 MSK. |
 | `idea-reality-check` | Проверка конкурентности идеи через `idea-reality-mcp`: GitHub, Hacker News, npm, PyPI, Product Hunt и Stack Overflow. |
 | `notion-note-create` | Создание заметок в Notion-датасорсе через raw Notion API. Поддерживает типы заметок и особый формат для списков покупок. |
 | `notion-task-create` | Создание задач в базе Notion через raw API с явным заполнением свойств. |
