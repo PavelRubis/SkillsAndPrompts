@@ -36,6 +36,8 @@ https://www.youtube.com/oembed?url=URL&format=json
 ```
 Спарсить `duration_seconds` (если есть в ответе).
 
+⚠️ yt-dlp может писать в stderr предупреждение `No supported JavaScript runtime could be found` — это **не фатально**, метаданные (duration/title) всё равно печатаются в stdout. Не считать это ошибкой. Также всегда забирать результат через `tail -1` (в stdout может попасть лишний шум).
+
 ### 2. Выбрать модель
 
 - Длительность **≤ 30 минут**: `google/gemini-3.1-pro-preview`
@@ -73,6 +75,8 @@ https://www.youtube.com/oembed?url=URL&format=json
 ```
 
 Извлечь ответ из `choices[0].message.content`.
+
+⚠️ Запрос с `video_url` реально обрабатывается минуты (Gemini смотрит видеоряд). Ставить таймаут ≥ 900–1800 сек, не путать с «зависанием».
 
 ### 4. Саммаризация (запрос 2 к Gemini)
 
@@ -116,17 +120,29 @@ https://www.youtube.com/oembed?url=URL&format=json
 **Видео ≥ 10 минут:** одно сообщение:
 1. Саммари + ссылка на Notion-заметку
 
+⚠️ Лимит сообщения Telegram — 4096 символов. Саммари часто длиннее → сжать до ~3500–3800 символов (главные выводы + тезисы по темам + цифры), ссылку на Notion оставить.
+
 ## API-ключи
 
-OpenRouter — из конфига OpenClaw:
+### OpenRouter
+
+⚠️ **Путь к ключу обновился.** Файла `~/.openclaw/agents/main/agent/auth-profiles.json` больше НЕ существует (проверено 2026-09-17). Также НЕ подходит `openclaw.json` → `agents.defaults.memorySearch.remote.apiKey` — это ключ Bothub для embeddings, не OpenRouter (с ним будет 401).
+
+Актуальный источник — SQLite-база агента, таблица `auth_profile_store`:
+
 ```python
-import json
-with open('/home/openclawrunner/.openclaw/openclaw.json') as f:
-    config = json.load(f)
-api_key = config['agents']['defaults']['memorySearch']['remote']['apiKey']
+import sqlite3, json
+db = '/home/openclawrunner/.openclaw/agents/main/agent/openclaw-agent.sqlite'
+con = sqlite3.connect(db)
+store = con.execute("select store_json from auth_profile_store where store_key='primary'").fetchone()[0]
+api_key = json.loads(store)['profiles']['openrouter:default']['key']
+con.close()
 ```
 
-Notion — из файла:
+Тип профиля — `api_key`, ключ в поле `key` (префикс `sk-or-`). **Не выводить ключ в чат/логи** — передавать только в заголовок Authorization. Трафик OpenRouter идёт через глобальный прокси OpenClaw автоматически (отдельно проксировать не нужно).
+
+### Notion
+
 ```bash
 export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
 export NOTION_API_VERSION=2026-03-11
@@ -143,6 +159,7 @@ export NOTION_API_VERSION=2026-03-11
 ## Edge cases
 
 - Видео без субтитров — Gemini анализирует аудиодорожку (работает)
+- 401 Unauthorized от OpenRouter → неверный источник ключа; брать ключ из `auth_profile_store` (см. выше), не из statics/config
 - Ошибка API — перейти к следующей модели из фолбек-цепочки
 - yt-dlp недоступен — использовать oEmbed; если оба недоступны — считать видео коротким
 - Токен Notion не умеет ни читать, ни удалять страницы
