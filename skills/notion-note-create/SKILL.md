@@ -175,7 +175,7 @@ export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
 export NOTION_API_VERSION=2026-03-11
 RES_DS_ID="058c79a8-e8f0-431b-b467-b9de20f4e61d"
 
-curl -sS -x http://127.0.0.1:9080 \
+curl -sS \
   "https://api.notion.com/v1/data_sources/$RES_DS_ID/query" \
   -H "Authorization: Bearer $NOTION_API_TOKEN" \
   -H "Notion-Version: 2026-03-11" \
@@ -204,7 +204,7 @@ export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
 export NOTION_API_VERSION=2026-03-11
 DS_ID="63686c23-7a55-4126-95b3-93b9e49b9820"
 
-curl -sS -x http://127.0.0.1:9080 "https://api.notion.com/v1/pages" \
+curl -sS "https://api.notion.com/v1/pages" \
   -H "Authorization: Bearer $NOTION_API_TOKEN" \
   -H "Notion-Version: 2026-03-11" \
   -H "Content-Type: application/json" \
