@@ -21,6 +21,10 @@
 │   ├── ChatGPT.md
 │   └── OpenWebUI.md
 └── skills/
+    ├── check-download-virustotal/
+    │   ├── SKILL.md
+    │   └── scripts/
+    │       └── vt_check.py
     ├── diary/
     │   ├── SKILL.md
     │   └── scripts/
@@ -58,6 +62,7 @@
 
 | Навык | Для чего нужен |
 |---|---|
+| `check-download-virustotal` | Проверка скачанного файла или URL в VirusTotal перед запуском/установкой. Правило: ничего из интернета не ставится без проверки. |
 | `diary` | Дневник через Notion Data Source: буфер записей в JSON-файле, напоминание 20:00 MSK (скрипт без LLM), автосоздание заметки 22:00 MSK. |
 | `idea-reality-check` | Проверка конкурентности идеи через `idea-reality-mcp`: GitHub, Hacker News, npm, PyPI, Product Hunt и Stack Overflow. |
 | `notion-note-create` | Создание заметок в Notion-датасорсе через raw Notion API. Поддерживает типы заметок и особый формат для списков покупок. |
@@ -87,6 +92,7 @@
 Некоторые навыки рассчитаны на внешние сервисы и локальную инфраструктуру:
 
 - Notion API token — файл `~/.hermes/state/.notion_token` (chmod 600)
+- VirusTotal API key — файл `~/.hermes/state/.virustotal_key` (chmod 600), free tier 4 запроса/мин
 - OpenRouter API key — `~/.hermes/.env`, переменная `OPENROUTER_API_KEY`
 - Gemini-модели через OpenRouter
 - `yt-dlp` — `~/.hermes/tools/bin/yt-dlp`
