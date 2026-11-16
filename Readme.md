@@ -92,7 +92,7 @@
 - `yt-dlp` — `~/.hermes/tools/bin/yt-dlp`
 - `@sharleysoft/openclaw-yandex-maps-places-review` — локальная установка в `~/.hermes/tools/yandex-reviews/` + Playwright headless shell
 - `idea-reality-mcp` — MCP-сервер, подключается к Hermes (`manage_connections`, `mcp: true`)
-- GitHub fine-grained token для пушей — `~/.hermes/state/.github_token` (chmod 600)
+- Пуш в репозиторий — SSH deploy key с write access (приватный ключ хранится вне репозитория)
 
 Секреты не должны храниться в репозитории. В самих навыках описано, откуда читать токены в рабочей среде и какие переменные окружения нужны.
 

@@ -15,15 +15,8 @@ platforms: [linux]
 
 - Git-репа склонирована в `~/work/SkillsAndPrompts`
 - Рабочая ветка — **`hermes`** (в `master` лежат версии под OpenClaw, их не трогаем)
-- GitHub fine-grained токен (только `Contents: read/write` на этот репозиторий) лежит в `~/.hermes/state/.github_token`
-- Учётные данные git настроены так, чтобы токен не попадал в командную строку:
-
-```bash
-export GH_TOKEN="$(cat ~/.hermes/state/.github_token)"
-git -C ~/work/SkillsAndPrompts config --local credential.helper "store --file=$HOME/.hermes/state/.git-credentials"
-printf 'https://x-access-token:%s@github.com\n' "$GH_TOKEN" > ~/.hermes/state/.git-credentials
-chmod 600 ~/.hermes/state/.git-credentials
-```
+- Пуш идёт по SSH deploy key этого репозитория (write access включён), remote `origin` — `git@github.com:PavelRubis/SkillsAndPrompts.git`
+- Приватный ключ лежит вне репозитория: `~/.hermes/state/id_github_deploy`, подставляется через `GIT_SSH_COMMAND` (см. шаг 8). Токены и ключи в репозитории не хранятся и в ответах не печатаются.
 
 - Автор коммитов в репе:
 
@@ -100,10 +93,10 @@ git commit -m "<описание на английском>"
 
 ```bash
 cd ~/work/SkillsAndPrompts
-git push origin hermes
+GIT_SSH_COMMAND="ssh -i ~/.hermes/state/id_github_deploy -o IdentitiesOnly=yes" git push origin hermes
 ```
 
-Токен подхватывается credential-хелпером из шага «Что нужно». Никогда не печатать токен в ответах и логах.
+Авторизация — только SSH-ключом; пароли и токены не запрашиваются и не печатаются.
 
 ### Шаг 9: Ответ
 
@@ -117,6 +110,5 @@ git push origin hermes
 
 ## Заметки
 
-- Токен лежит в `~/.hermes/state/.github_token` (chmod 600), никогда не светить его в логах/ответах
-- `~/.hermes/state/.git-credentials` тоже chmod 600 и не коммитится
+- Авторизация — только SSH deploy key, привязанный к этому репозиторию. Никакие токены в репо и в ответах не появляются.
 - Ветка `hermes` — единственная, куда пушит агент. Merge в `master` — решение Паши.

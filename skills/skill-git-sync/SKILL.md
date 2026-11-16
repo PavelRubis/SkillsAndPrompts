@@ -14,7 +14,7 @@ platforms: [linux]
 
 - Git-репа склонирована в `~/work/SkillsAndPrompts`
 - Рабочая ветка — `hermes` (версии под Hermes; в `master` — под OpenClaw)
-- Токен: `~/.hermes/state/.github_token`, git credentials — через `credential.helper store` с файлом `~/.hermes/state/.git-credentials` (см. навык `skill-git-dev`)
+- Пулл и пуш идут по SSH deploy key репозитория (remote `git@github.com:PavelRubis/SkillsAndPrompts.git`); детали — в навыке `skill-git-dev`
 
 ## Порядок действий
 
