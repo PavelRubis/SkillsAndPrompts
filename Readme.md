@@ -4,6 +4,15 @@
 
 Здесь собраны инструкции, которые задают поведение модели: язык общения, подход к анализу вопросов, правила работы с источниками, формат ответов и конкретные workflow для повторяющихся задач.
 
+## Ветки
+
+| Ветка | Для кого |
+|---|---|
+| `hermes` | Hermes Agent (эта машина): `~/.hermes/...`, cron через `cronjob_manage`, скиллы через `skill_manage`, веб через `web_search`/`web_extract`, браузер через `browser_exec`. |
+| `master` | Исходная версия под OpenClaw (`~/.openclaw/workspace/state`, `cron get/update`, `skill_workshop`, `web_fetch`, плагины в `plugins.entries`). |
+
+Ветки расходятся только в интеграционных местах — логика навыков общая.
+
 ## Что внутри
 
 ```text
@@ -13,13 +22,25 @@
 │   └── OpenWebUI.md
 └── skills/
     ├── diary/
+    │   ├── SKILL.md
+    │   └── scripts/
+    │       └── diary_reminder.py
     ├── idea-reality-check/
+    │   └── SKILL.md
     ├── notion-note-create/
+    │   └── SKILL.md
     ├── notion-task-create/
+    │   └── SKILL.md
     ├── skill-git-dev/
+    │   └── SKILL.md
     ├── skill-git-sync/
+    │   └── SKILL.md
     ├── yandex-reviews-analyzer/
+    │   └── SKILL.md
     └── youtube-analyzer/
+        ├── SKILL.md
+        └── references/
+            └── notion-api.md
 ```
 
 ## System Prompts
@@ -37,14 +58,14 @@
 
 | Навык | Для чего нужен |
 |---|---|
-| `diary` | Дневник через Notion Data Source: буфер записей, напоминалка 20:00 MSK, автосоздание заметки в 22:00 MSK. |
+| `diary` | Дневник через Notion Data Source: буфер записей в JSON-файле, напоминание 20:00 MSK (скрипт без LLM), автосоздание заметки 22:00 MSK. |
 | `idea-reality-check` | Проверка конкурентности идеи через `idea-reality-mcp`: GitHub, Hacker News, npm, PyPI, Product Hunt и Stack Overflow. |
 | `notion-note-create` | Создание заметок в Notion-датасорсе через raw Notion API. Поддерживает типы заметок и особый формат для списков покупок. |
 | `notion-task-create` | Создание задач в базе Notion через raw API с явным заполнением свойств. |
-| `skill-git-dev` | Git-воркфлоу разработки скиллов: коммит, пуш, синхронизация Readme.md. |
-| `skill-git-sync` | Sync skills from Git repo: pull master, install/update a skill by name. Trigger: актуализируй |
+| `skill-git-dev` | Git-воркфлоу разработки скиллов: правка, дифф, аппрув, коммит, установка через `skill_manage`, пуш. |
+| `skill-git-sync` | Sync skills from Git repo: pull ветки `hermes`, install/update a skill by name. Trigger: актуализируй |
 | `yandex-reviews-analyzer` | Сбор и анализ негативных отзывов с Яндекс.Карт, сортировка по критичности и подготовка отчета. |
-| `youtube-analyzer` | Анализ YouTube-видео через Gemini/OpenRouter: транскрибация, саммари, сохранение результата в Notion и отправка ответа в Telegram. |
+| `youtube-analyzer` | Анализ YouTube-видео через Gemini/OpenRouter: транскрибация, саммари, сохранение результата в Notion и ответ в чат. |
 
 ## Как использовать
 
@@ -54,23 +75,24 @@
 2. Скопируй содержимое в системные инструкции выбранного интерфейса.
 3. При необходимости адаптируй отдельные правила под конкретную среду.
 
-### Навыки
+### Навыки (Hermes)
 
 1. Найди нужный каталог в `skills/`.
-2. Открой `SKILL.md`.
-3. Подключи файл как skill/instruction в среде, которая поддерживает пользовательские навыки.
-4. Проверь зависимости, указанные внутри навыка: API-токены, MCP-серверы, CLI-инструменты или браузерный плагин.
+2. Открой `SKILL.md` и support-файлы (`scripts/`, `references/`).
+3. Установи навык тулом `skill_manage` (`create` для нового, `patch` с полным `content` для существующего, `write_file` для support-файлов). Целевой каталог — `~/.hermes/skills/<категория>/<имя>/`.
+4. Проверь зависимости, указанные внутри навыка: API-токены, MCP-серверы, CLI-инструменты, локально установленные сборщики.
 
 ## Зависимости и секреты
 
 Некоторые навыки рассчитаны на внешние сервисы и локальную инфраструктуру:
 
-- Notion API token
-- OpenRouter API key
+- Notion API token — файл `~/.hermes/state/.notion_token` (chmod 600)
+- OpenRouter API key — `~/.hermes/.env`, переменная `OPENROUTER_API_KEY`
 - Gemini-модели через OpenRouter
-- `yt-dlp`
-- `idea-reality-mcp`
-- браузерный плагин для работы с динамическими страницами
+- `yt-dlp` — `~/.hermes/tools/bin/yt-dlp`
+- `@sharleysoft/openclaw-yandex-maps-places-review` — локальная установка в `~/.hermes/tools/yandex-reviews/` + Playwright headless shell
+- `idea-reality-mcp` — MCP-сервер, подключается к Hermes (`manage_connections`, `mcp: true`)
+- GitHub fine-grained token для пушей — `~/.hermes/state/.github_token` (chmod 600)
 
 Секреты не должны храниться в репозитории. В самих навыках описано, откуда читать токены в рабочей среде и какие переменные окружения нужны.
 

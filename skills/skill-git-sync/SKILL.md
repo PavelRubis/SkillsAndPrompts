@@ -1,51 +1,56 @@
 ---
 name: "skill-git-sync"
-description: "Sync skills from Git repo: pull master, install/update a skill by name. Trigger: актуализируй"
+description: "Sync skills from git: pull hermes, install/update skill. Trigger: актуализируй"
+version: 0.2.0
+author: Hermes Agent
+platforms: [linux]
 ---
 
 # Skill Git Sync
 
-Триггер: Паша говорит «актуализируй <имя-скилла>».
+Триггер: Паша говорит «актуализируй `<имя-скилла>`».
 
 ## Что нужно
 
-- Git-репа склонирована в `state/skills-repo/`
-- GitHub fine-grained токен лежит в `state/.github_token`
-- Remote `origin` использует `https://oauth2:<token>@github.com/...` для push-доступа
+- Git-репа склонирована в `~/work/SkillsAndPrompts`
+- Рабочая ветка — `hermes` (версии под Hermes; в `master` — под OpenClaw)
+- Токен: `~/.hermes/state/.github_token`, git credentials — через `credential.helper store` с файлом `~/.hermes/state/.git-credentials` (см. навык `skill-git-dev`)
 
 ## Порядок действий
 
-### 1. Pull последней версии master
+### 1. Pull последней версии ветки hermes
 
-cd state/skills-repo && git pull origin master
+```bash
+cd ~/work/SkillsAndPrompts && git pull origin hermes
+```
 
 ### 2. Проверить, есть ли скилл в репе
 
-Проверить наличие `skills/<имя>/SKILL.md` в репе.
+Проверить наличие `skills/<имя>/SKILL.md`.
 
 Если НЕ найден:
-- Найти в `state/skills-repo/skills/` похожие по названию скиллы.
-- Ответить: «Скилл `<имя>` не найден в репозитории. Вот похожие: `<список>`. Какой ты имел в виду?»
-- Ждать ответа Паши.
+- Найти похожие по названию каталоги в `skills/`
+- Ответить: «Скилл `<имя>` не найден в репозитории. Похожие: `<список>`. Какой ты имел в виду?»
+- Ждать ответа Паши
 
 ### 3. Прочитать скилл из репы
 
-Прочитать `state/skills-repo/skills/<имя>/SKILL.md` полностью.
+Прочитать `skills/<имя>/SKILL.md` полностью, плюс support-файлы (`references/`, `scripts/`, `assets/`).
 
-Также проверить support-файлы в `state/skills-repo/skills/<имя>/` (references/, scripts/, assets/).
+### 4. Установить или обновить в Hermes
 
-### 4. Установить или обновить
+Скиллы Hermes лежат в `~/.hermes/skills/<категория>/<имя>/`; установка — только через `skill_manage` (тула `skill_workshop`, как в OpenClaw, в Hermes нет).
 
-**Если скилл уже есть в `workspace/skills/<имя>/`:**
-- Вызвать `skill_workshop` с `action=update`, `skill_name=<имя>`, передав SKILL.md из репы как `proposal_content`.
-- Скопировать support-файлы из репы в `workspace/skills/<имя>/`.
-- Вызвать `skill_workshop` с `action=apply` и proposal_id из обновления.
+**Если скилл уже установлен (`skill_view(name=<имя>)` отвечает):**
+- `skill_manage(action="patch", name="<имя>", content=<полный SKILL.md из репы>)`
+- Support-файлы: `skill_manage(action="write_file", name="<имя>", file_path="references/x.md", file_content=...)`
 
-**Если скилл новый (нет в workspace):**
-- Вызвать `skill_workshop` с `action=create`, `name=<имя>`, передав SKILL.md из репы как `proposal_content`.
-- Скопировать support-файлы из репы в `workspace/skills/<имя>/`.
-- Вызвать `skill_workshop` с `action=apply`.
+**Если скилл новый:**
+- `skill_manage(action="create", name="<имя>", content=<SKILL.md>, category="<категория>")`
+- затем `write_file` для каждого support-файла
+
+⚠️ Перед созданием помнить про лимит: `description` в frontmatter Hermes показывает индекс навыков и должен быть коротким (в идеале ≤ 60 символов). В репе описания длиннее — при установке можно оставить как есть, но при обновлении индекса лучше сокращать.
 
 ### 5. Ответить
 
-«Скилл `<имя>` актуализирован из master.»
+«Скилл `<имя>` актуализирован из ветки hermes.»

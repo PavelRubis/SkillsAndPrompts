@@ -1,25 +1,29 @@
 ---
 name: "notion-note-create"
-description: "Создание заметок в Notion-датасорсе: токен, Тип1, контент, to-do для списка покупок."
+description: "Заметки в Notion-датасорсе: токен, Тип1, контент, to-do для покупок."
+version: 0.2.0
+author: Hermes Agent
+platforms: [linux]
 ---
 
 # Notion Note Create
 
-Создание обычных заметок в Notion через raw API (curl).  
-`ntn pages create` (Markdown) **не пробрасывает свойства базы** — используем прямой POST `/v1/pages`.
+Создание обычных заметок в Notion через raw API (curl).
+Markdown-эндпоинт (Notion MCP / `ntn pages create`) **не пробрасывает свойства базы** — используем прямой POST `/v1/pages`.
 
 ## Переменные окружения
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 ```
 
 ⚠️ Токен умеет **только создавать** страницы. Не читать, не обновлять, не удалять.
 
+Если файла `~/.hermes/state/.notion_token` нет — не выдумывать токен и не просить его в чат: сказать Паше, что нужен файл с токеном.
+
 ## ID базы (data source)
 
-База заметок и дневника — одна и та же, это **датасорс** (не обычная база данных).  
+База заметок и дневника — одна и та же, это **датасорс** (не обычная база данных).
 Parent: `data_source_id`, а НЕ `database_id`.
 
 Data Source ID: `63686c23-7a55-4126-95b3-93b9e49b9820`
@@ -54,15 +58,14 @@ Data Source ID: `63686c23-7a55-4126-95b3-93b9e49b9820`
 | Дневник |
 | Брейншторм |
 
-⚠️ `Дневник` — не использовать в этом скилле (для него отдельный механизм через `diary_buffer.json`).
+⚠️ `Дневник` — не использовать в этом скилле (для него отдельный механизм, см. навык `diary`).
 
 Если Паша называет Тип1 не из списка — уточнить, какой из существующих использовать.
 
 ## Создание заметки (curl)
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 DS_ID="63686c23-7a55-4126-95b3-93b9e49b9820"
 
 curl -sS "https://api.notion.com/v1/pages" \
@@ -132,8 +135,8 @@ curl -sS "https://api.notion.com/v1/pages" \
 
 Алгоритм:
 
-1. Прочитать все ресурсы из базы «Resources»(см. ниже) — получить `Name` и id каждой страницы-ресурса.
-2. Перейти по ссылке (`web_fetch`) и прочитать немного текста статьи. **Если ссылка короткая/замаскированная** — сначала развернуть редирект (см. ниже).
+1. Прочитать все ресурсы из базы «Resources» (см. ниже) — получить `Name` и id каждой страницы-ресурса.
+2. Перейти по ссылке (`web_extract`) и прочитать текст статьи. **Если ссылка короткая/замаскированная** — сначала развернуть редирект (см. ниже).
 3. По тексту статьи определить, к каким ресурсам её можно прилинковать. Ресурсов может быть 0, 1, 2 и больше. Если подходящего ресурса нет — не линковать вообще.
 4. Создать заметку:
    - `Название` = `<Заголовок статьи>` + `" Хабр"`
@@ -149,18 +152,20 @@ curl -sS "https://api.notion.com/v1/pages" \
 https://share.google/C0aZ6H6tbd0XHNQhO
 ```
 
-Перед чтением статьи такие ссылки нужно **развернуть** до реального URL. Надёжный способ — `web_fetch`: он сам следует редиректу, а финальный URL виден в поле `finalUrl` ответа:
+Перед чтением такие ссылки нужно **развернуть** до реального URL.
 
+⚠️ `web_extract` в Hermes **не возвращает финальный URL** после редиректов (нет поля `finalUrl`, как было в OpenClaw `web_fetch`). `curl -I -L` для `share.google` тоже не работает — отдаёт промежуточный `google.com/share.google?q=...`, потому что редирект клиентский.
+
+Рабочий способ — браузер:
+
+```python
+# browser_exec
+goto_url("https://share.google/C0aZ6H6tbd0XHNQhO")
+wait_for_load()
+print(js("location.href"))   # реальный URL статьи
 ```
-web_fetch { "url": "https://share.google/C0aZ6H6tbd0XHNQhO" }
-→ { "url": "https://share.google/...", "finalUrl": "https://habr.com/ru/articles/1082572/", ... }
-```
 
-Именно `finalUrl` (например `https://habr.com/ru/articles/XXXXXX/`) использовать как ссылку в контенте заметки.
-
-⚠️ `curl -I -L` для `share.google` **не работает** — отдаёт промежуточный `google.com/share.google?q=...`, а не статью. Редирект там клиентский. Поэтому только `web_fetch`.
-
-Если развернуть не удалось (не Хабр / не статья) — спросить Пашу, что это за ссылка.
+Полученный `location.href` (например `https://habr.com/ru/articles/XXXXXX/`) и использовать как ссылку в заметке. Если браузер отдал заглушку/капчу или URL не хабровский — спросить Пашу, что это за ссылка.
 
 ### База «Resources» (датасорс ресурсов)
 
@@ -171,8 +176,7 @@ Data Source ID: `058c79a8-e8f0-431b-b467-b9de20f4e61d`
 Чтение всех ресурсов:
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 RES_DS_ID="058c79a8-e8f0-431b-b467-b9de20f4e61d"
 
 curl -sS \
@@ -200,8 +204,7 @@ curl -sS \
 ### Пример создания заметки-ссылки
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 DS_ID="63686c23-7a55-4126-95b3-93b9e49b9820"
 
 curl -sS "https://api.notion.com/v1/pages" \
@@ -226,13 +229,12 @@ curl -sS "https://api.notion.com/v1/pages" \
 ```bash
 # Из ответа API берём id, убираем все дефисы
 PAGE_ID="385a426d-c624-8128-ab6c-e703b4e19125"
-URL_ID="${PAGE_ID//-/}"
-echo "https://notion.so/$URL_ID"
+echo "https://notion.so/${PAGE_ID//-/}"
 ```
 
 ## Частые грабли
 
-- **Токен:** всегда читать из `state/.notion_token`, не хардкодить
+- **Токен:** всегда читать из `~/.hermes/state/.notion_token`, не хардкодить
 - **Markdown-эндпоинт не работает для свойств** — только raw API с явным JSON
 - **Parent:** `data_source_id`, НЕ `database_id` (это датасорс, с `database_id` будет 404)
 - **Дефисы в URL:** убрать все дефисы из ID страницы

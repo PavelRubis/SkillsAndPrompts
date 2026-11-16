@@ -1,22 +1,26 @@
 ---
 name: "notion-task-create"
-description: "Создание задач в Notion-базе через ntn CLI: token, database ID, frontmatter, частые грабли."
+description: "Задачи в Notion-базе через raw API: токен, database ID, свойства."
+version: 0.2.0
+author: Hermes Agent
+platforms: [linux]
 ---
 
 # Notion Task Create
 
-Создание задач в базе задач Notion через raw API (curl).  
-Markdown-эндпоинт `ntn pages create` **не пробрасывает свойства базы** — только контент страницы.  
+Создание задач в базе задач Notion через raw API (curl).
+Markdown-эндпоинт (`ntn pages create`, Notion MCP) **не пробрасывает свойства базы** — только контент страницы.
 Поэтому используем прямой POST на `/v1/pages` с явным JSON.
 
 ## Переменные окружения
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 ```
 
 ⚠️ Токен умеет **только создавать** страницы. Не читать, не обновлять, не удалять.
+
+Если файла `~/.hermes/state/.notion_token` нет — сказать Паше, что нужен файл с токеном (в чат токен не просить).
 
 ## ID базы задач
 
@@ -36,8 +40,7 @@ export NOTION_API_VERSION=2026-03-11
 ## Создание задачи (curl)
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 
 curl -sS "https://api.notion.com/v1/pages" \
   -H "Authorization: Bearer $NOTION_API_TOKEN" \
@@ -79,7 +82,7 @@ https://notion.so/<page-id-without-dashes>
 
 ## Частые грабли
 
-- **Токен:** всегда читать из `state/.notion_token`, не хардкодить
+- **Токен:** всегда читать из `~/.hermes/state/.notion_token`, не хардкодить
 - **Markdown-эндпоинт не работает для свойств** — только raw API с явным JSON
 - **Parent:** `database_id`, не `data_source_id` (эта база не датасорс)
 - **Дефисы в URL:** убрать все дефисы из ID страницы

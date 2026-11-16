@@ -1,99 +1,122 @@
 ---
 name: "skill-git-dev"
-description: "Воркфлоу разработки скиллов в Git-репозитории"
+description: "Разработка скиллов в git-репе: правка, дифф, аппрув, коммит, установка."
+version: 0.2.0
+author: Hermes Agent
+platforms: [linux]
 ---
 
 # Skill Git Dev
 
-Полный цикл разработки скиллов, отслеживаемых в Git. Триггер: явная команда /skill_git_dev <название скила> <описание изменений>.
+Полный цикл разработки скиллов, отслеживаемых в Git.
+Триггер: Паша говорит «сделай/поправь скилл `<имя>`: `<что изменить>`» (в OpenClaw это была команда `/skill_git_dev`).
 
 ## Что нужно
 
-- Git-репа склонирована в `state/skills-repo/`
-- GitHub fine-grained токен лежит в `state/.github_token`
-- Git config в репе:
-  - `user.name`: Clow
-  - `user.email`: clow@mail.prubserv.ru
+- Git-репа склонирована в `~/work/SkillsAndPrompts`
+- Рабочая ветка — **`hermes`** (в `master` лежат версии под OpenClaw, их не трогаем)
+- GitHub fine-grained токен (только `Contents: read/write` на этот репозиторий) лежит в `~/.hermes/state/.github_token`
+- Учётные данные git настроены так, чтобы токен не попадал в командную строку:
+
+```bash
+export GH_TOKEN="$(cat ~/.hermes/state/.github_token)"
+git -C ~/work/SkillsAndPrompts config --local credential.helper "store --file=$HOME/.hermes/state/.git-credentials"
+printf 'https://x-access-token:%s@github.com\n' "$GH_TOKEN" > ~/.hermes/state/.git-credentials
+chmod 600 ~/.hermes/state/.git-credentials
+```
+
+- Автор коммитов в репе:
+
+```bash
+git -C ~/work/SkillsAndPrompts config user.name "Hermes Agent"
+git -C ~/work/SkillsAndPrompts config user.email "hermes@nousresearch.local"
+```
 
 ## Порядок действий
 
-### Шаг 1: Подготовить директорию разработки скила
+### Шаг 1: Подготовить директорию разработки
 
-Если будет меняться существующий скилл — скопировать его файлы из `workspace/skills/<имя>/` во временную директорию разработки - `workspace/temp/skills/<имя>/`:
+```bash
+mkdir -p ~/.hermes/cache/scratch/skill-dev/<имя>
+```
 
-- `SKILL.md` — всегда
-- `references/`, `scripts/`, `assets/` — если есть
+Если скилл существует — скопировать его файлы из `~/work/SkillsAndPrompts/skills/<имя>/` в `~/.hermes/cache/scratch/skill-dev/<имя>/` (`SKILL.md` всегда, плюс `references/`, `scripts/`, `assets/` если есть). Старые файлы в директории разработки удалить — они могли остаться с прошлой сессии.
 
-Если скилл новый — создать директорию `workspace/temp/skills/<имя>/`.
+`~/.hermes/cache/scratch` чистится сам через 24 часа, поэтому это безопасная песочница.
 
-Если во временной директории уже есть файлы скила — удалить их. Они остались с прошлой сессии разработки.
+### Шаг 2: Внести изменения
 
-### Шаг 2: Выполнить необходимые изменения скила
+Правки в `~/.hermes/cache/scratch/skill-dev/<имя>/SKILL.md` и support-файлах.
 
-Выполнить требуемые изменения в `workspace/temp/skills/<имя>/SKILL.md` и, при необходимости, в support-файлах скила (references/, scripts/, assets/).
+### Шаг 3: Синхронизировать в репу
 
-### Шаг 3: Синхронизировать файлы скилла в репу
+```bash
+cp -r ~/.hermes/cache/scratch/skill-dev/<имя>/. ~/work/SkillsAndPrompts/skills/<имя>/
+```
 
-Скопировать файлы из `workspace/temp/skills/<имя>/` в `state/skills-repo/skills/<имя>/`:
+При добавлении **нового** скилла:
 
-- `SKILL.md` — всегда
-- `references/`, `scripts/`, `assets/` — если есть
-
-При добавлении **нового** скилла, которого раньше не было в репе:
-
-1. Прочитать существующий `state/skills-repo/Readme.md`
-2. Прочитать frontmatter нового скилла (`SKILL.md`) — извлечь `description`
-3. Добавить строку в таблицу скиллов в `Readme.md`, сохраняя алфавитный порядок:
+1. Прочитать `~/work/SkillsAndPrompts/Readme.md`
+2. Взять `description` из frontmatter нового скилла
+3. Добавить строку в таблицу скиллов, сохраняя алфавитный порядок:
 
 ```markdown
 | `имя-скилла` | Описание из frontmatter SKILL.md |
 ```
 
-4. Обновить блок с деревом директорий (список `├── skill-name/`), добавив новый скилл
+4. Добавить `├── skill-name/` в блок дерева директорий
 
-- Если скилл удаляется — убрать его строку из таблицы и дерева
+Если скилл удаляется — убрать его строку из таблицы и из дерева.
 
+### Шаг 4: Показать изменения Паше
 
-### Шаг 4: Показать выполненные изменения Паше
-
-Ответь Паше: «Скилл `<имя>` готов к коммиту. Вот изменения:» и приложи `git diff` из `state/skills-repo/` для каждого файла, который был изменён или создан.
-
+Ответить: «Скилл `<имя>` готов к коммиту. Вот изменения:» и приложить `git diff` из `~/work/SkillsAndPrompts` по всем изменённым/созданным файлам.
 
 ### Шаг 5: Подтвердить аппрув Паши
 
- Получить от Паши явное одобрение изменений скилла. Если Паша не одобрил — обязательно вернуться к шагу 2, внести исправления и пойти дальше (шаг 3, 4 и т.п.).
+Дождаться явного одобрения. Не одобрил — вернуться к шагу 2 и пройти цикл заново.
 
 ### Шаг 6: Stage и коммит
 
 ```bash
-cd state/skills-repo
+cd ~/work/SkillsAndPrompts
 git add skills/<имя>/
-# Если Readme.md обновлялся:
+# если Readme.md обновлялся:
 git add Readme.md
 git commit -m "<описание на английском>"
 ```
 
-### Шаг 7: Применение скила
+### Шаг 7: Установить скилл в Hermes
 
-Примени скилл обязательно через `skill_workshop` с апрувом от Паши. Убедись, что скилл успешно применился.
+Скиллы Hermes живут в `~/.hermes/skills/<категория>/<имя>/` и управляются тулом `skill_manage` (в OpenClaw это был `skill_workshop` — в Hermes его нет).
+
+- **Существующий скилл:** `skill_manage(action="patch", name="<имя>", content=<полный SKILL.md из репы>)`
+- **Новый скилл:** `skill_manage(action="create", name="<имя>", content=<SKILL.md>, category="<категория>")`
+- **Support-файлы:** `skill_manage(action="write_file", name="<имя>", file_path="scripts/foo.py", file_content=...)`
+
+Проверить, что скилл виден: `skill_view(name="<имя>")`.
 
 ### Шаг 8: Пуш
 
 ```bash
-git push origin master
+cd ~/work/SkillsAndPrompts
+git push origin hermes
 ```
+
+Токен подхватывается credential-хелпером из шага «Что нужно». Никогда не печатать токен в ответах и логах.
 
 ### Шаг 9: Ответ
 
-Ответить с хешем коммита и саммари: «Коммит `<хеш>`: `<сообщение>`»
+«Коммит `<хеш>`: `<сообщение>`» + подтверждение, что скилл установлен в Hermes.
 
 ## Правила коммит-сообщений
 
-- Писать на английском
-- Короткий imperative формат (до 72 символов для заголовка)
-- Описывать ЧТО изменилось: "add retry logic to yandex-reviews-analyzer", "update notion-task-create frontmatter"
+- На английском
+- Короткий imperative-формат, заголовок до 72 символов
+- Описывать ЧТО изменилось: `add retry logic to yandex-reviews-analyzer`, `update notion-task-create frontmatter`
 
 ## Заметки
 
-- Токен лежит в `state/.github_token` (chmod 600), никогда не светить его в логах или ответах
-- Remote URL содержит токен — держать директорию репы приватной
+- Токен лежит в `~/.hermes/state/.github_token` (chmod 600), никогда не светить его в логах/ответах
+- `~/.hermes/state/.git-credentials` тоже chmod 600 и не коммитится
+- Ветка `hermes` — единственная, куда пушит агент. Merge в `master` — решение Паши.

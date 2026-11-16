@@ -3,8 +3,7 @@
 ## Переменные окружения
 
 ```bash
-export NOTION_API_TOKEN="$(cat ~/.openclaw/workspace/state/.notion_token)"
-export NOTION_API_VERSION=2026-03-11
+export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 ```
 
 ⚠️ Токен умеет **только создавать** страницы. Не читать, не обновлять, не удалять.
