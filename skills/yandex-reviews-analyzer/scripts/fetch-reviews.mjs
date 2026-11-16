@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CLI-обёртка над плагином @sharleysoft/openclaw-yandex-maps-places-review.
 // Запуск: node fetch-reviews.mjs <url Яндекс.Карт> [count]
-// Печатает JSON { place, reviews: [{date,text,url}], stats } в stdout.
+// Печатает JSON { sourceUrl, requestedCount, fetchedAt, reviews: [{date,text,url}], stats } в stdout.
 // Логи pino идут в stderr, поэтому stdout остаётся чистым JSON.
 
 import { createToolCallHandlers } from '@sharleysoft/openclaw-yandex-maps-places-review/dist/Composition/create-tool-call-handlers.js';
