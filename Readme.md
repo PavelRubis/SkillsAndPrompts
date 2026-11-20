@@ -32,10 +32,10 @@
     ├── idea-reality-check/
     │   └── SKILL.md
     ├── notion-note-create/
-    │   └── SKILL.md
+    │   ├── SKILL.md
+    │   └── scripts/
+    │       └── page_dump.py
     ├── notion-task-create/
-    │   └── SKILL.md
-    ├── skill-git-dev/
     │   └── SKILL.md
     ├── skill-git-sync/
     │   └── SKILL.md
@@ -43,8 +43,11 @@
     │   └── SKILL.md
     └── youtube-analyzer/
         ├── SKILL.md
-        └── references/
-            └── notion-api.md
+        ├── references/
+        │   └── notion-api.md
+        └── scripts/
+            ├── chunked_whisper.sh
+            └── notion_md_blocks.py
 ```
 
 ## System Prompts
@@ -67,7 +70,6 @@
 | `idea-reality-check` | Проверка конкурентности идеи через `idea-reality-mcp`: GitHub, Hacker News, npm, PyPI, Product Hunt и Stack Overflow. |
 | `notion-note-create` | Создание заметок в Notion-датасорсе через raw Notion API. Поддерживает типы заметок и особый формат для списков покупок. |
 | `notion-task-create` | Создание задач в базе Notion через raw API с явным заполнением свойств. |
-| `skill-git-dev` | Git-воркфлоу разработки скиллов: правка, дифф, аппрув, коммит, установка через `skill_manage`, пуш. |
 | `skill-git-sync` | Sync skills from Git repo: pull ветки `hermes`, install/update a skill by name. Trigger: актуализируй |
 | `yandex-reviews-analyzer` | Сбор и анализ негативных отзывов с Яндекс.Карт, сортировка по критичности и подготовка отчета. |
 | `youtube-analyzer` | Анализ YouTube-видео через Gemini/OpenRouter: транскрибация, саммари, сохранение результата в Notion и ответ в чат. |
