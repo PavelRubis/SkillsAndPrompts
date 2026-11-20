@@ -8,7 +8,7 @@ platforms: [linux]
 
 # Idea Reality Check
 
-Проверка конкурентности и уникальности идей через MCP-сервер `idea-reality-mcp` (в Hermes — через `manage_connections`).
+Проверка конкурентности и уникальности идей через MCP-сервер `idea-reality-mcp` (нативный MCP-клиент Hermes, подключается через `hermes mcp add`).
 
 Один вызов MCP-тула `idea_check` покрывает все шесть источников — отдельный MCP-сервер на каждый не нужен.
 
@@ -31,19 +31,38 @@ platforms: [linux]
 
 **Всегда используй idea-reality-mcp для таких запросов.**
 
-## Инструмент: `idea_check`
+## Инструмент: `mcp_idea_reality_idea_check`
 
-Параметры:
-- `idea` (string, required) — описание идеи на естественном языке
-- `mode` (string, optional) — `"quick"` (GitHub + HN, ~2 сек) или `"deep"` (все 6 источников, дольше)
+После подключения тул регистрируется как `mcp_idea_reality_idea_check` (префикс `mcp_<server>_`).
 
-Для быстрых проверок используй `quick`, для серьёзного анализа — `deep`.
+Параметры (реальная схема сервера):
+- `idea_text` (string, required) — описание идеи на естественном языке. Поля `idea` НЕ существует.
+- `depth` (string, optional, default `quick`) — `"quick"` (GitHub + Hacker News, быстро) или `"deep"` (все источники параллельно, дольше). Поля `mode` НЕ существует.
+
+Для быстрых проверок `quick`, для серьёзного анализа `deep`.
+
+## Что возвращает (реальные поля)
+
+Ответ — JSON в `content[0].text`:
+
+| Поле | Что это |
+|---|---|
+| `reality_signal` | 0–100, насколько идея уже реализована рынком |
+| `duplicate_likelihood` | `low` / `medium` / `high` — оценка вероятности дубликата |
+| `sub_scores` | `competition_density`, `market_maturity`, `community_buzz`, `market_momentum`, `ecosystem_depth_npm`, `ecosystem_depth_pypi`, `product_launches` (часть полей `null` при `quick`) |
+| `trend` | `growing` / `declining` / … |
+| `evidence[]` | факты-основания: `source` (github/hackernews/…), `type` (`repo_count`, `max_stars`, `mention_count`…), `query`, `count`, `detail` |
+| `top_similars[]` | похожие проекты; при низкой конкуренции пустой |
+| `pivot_hints[]` | подсказки, как развернуть идею |
+| `meta` | `sources_used`, `depth`, `version`, `keyword_source` |
+
+Полей `top_competitors`, `trends`, `pivot_suggestions` в ответе НЕТ — не выдумывать их в отчёте.
 
 ## Формат ответа — СТРОГО
 
 ⚠️ **Всегда в таком порядке:**
 
-1. **Результаты MCP:** reality score, sub-scores, источники, top_similars, pivot_hints
+1. **Результаты MCP:** `reality_signal`, `duplicate_likelihood`, `sub_scores`, `trend`, `evidence` (какие источники и сколько нашлось), `top_similars`, `pivot_hints`
 2. **Сводный вывод:** интерпретация результатов, специфика рынка, рекомендации
 
 Не смешивать части и не начинать с собственных выводов. MCP-результат всегда первым.
@@ -58,24 +77,28 @@ platforms: [linux]
 
 ## Интерпретация результатов
 
-- **Reality score 0–100** — насколько идея уже реализована рынком
+- **`reality_signal` 0–100** — насколько идея уже реализована рынком
   - 0–20: практически нет аналогов, голубое небо
   - 20–40: есть единичные проекты, ниша свободна
   - 40–60: умеренная конкуренция, есть пространство для дифференциации
   - 60–80: высокая конкуренция, нужен сильный угол
   - 80–100: рынок saturated, делать «ещё один такой же» не стоит
-- **top_competitors** — список существующих проектов/продуктов
-- **trends** — растёт интерес или падает
-- **pivot_suggestions** — рекомендации по изменению угла идеи
+- **`duplicate_likelihood`** — прямая оценка «есть ли уже такой продукт»; `high` при `reality_signal` ≳ 70
+- **`evidence`** — на что опирается оценка: количество репозиториев, звёзды у топа, упоминания на HN. Приводить конкретные цифры из `count`/`detail`, а не только итоговый скор
+- **`trend`** — растёт интерес или падает
+- **`pivot_hints`** — готовые подсказки по развороту идеи; пересказывать их, а не выдумывать свои
 
 ## Важно
 
-- MCP-сервер `idea-reality-mcp` должен быть подключён к Hermes:
-  `manage_connections(action="install", connectors=[{"name": "idea-reality", "mcp": true}])`
-  (в OpenClaw это был `plugins.entries`/`mcp.servers` — в Hermes MCP-серверы подключаются только через `manage_connections`, конфиг руками не правится).
-- Запуск сервера требует `uv`/`uvx` в системе. Если `uv` нет — `curl -LsSf https://astral.sh/uv/install.sh | sh`.
-- Если MCP недоступен или не подключается — честно сказать Паше, что проверку выполнить не получится, и не подменять результат веб-поиском.
-- Всегда показывать reality score в ответе Паше.
+- Подключение сервера (один раз):
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh   # если нет uv
+  printf 'Y\n' | hermes mcp add idea-reality --command uvx --args idea-reality-mcp
+  ```
+  `hermes mcp add` спрашивает «Enable all tools?» — без TTY ввод не проходит и установка отменяется, поэтому ответ прокидывается через `printf 'Y\n' |`. Проверка: `hermes mcp list` (строки `idea-reality … ✓ enabled`) и `hermes mcp test idea-reality`.
+- Тулы MCP подхватываются только в новой сессии или после `/reload-mcp` — в текущей сессии их может не быть, и это не поломка.
+- Если сервер не подключён — честно сказать Паше, что проверку выполнить не получится, и не подменять результат веб-поиском.
+- Всегда показывать `reality_signal` в ответе Паше.
 
 ## Ограничения
 
