@@ -14,7 +14,7 @@ platforms: [linux]
 
 - Git-репа склонирована в `~/work/SkillsAndPrompts`
 - Рабочая ветка — `hermes` (версии под Hermes; в `master` — под OpenClaw)
-- Пулл и пуш идут по SSH deploy key репозитория (remote `git@github.com:PavelRubis/SkillsAndPrompts.git`); детали — в навыке `skill-git-dev`
+- Пулл и пуш идут по SSH deploy key репозитория (remote `git@github.com:PavelRubis/SkillsAndPrompts.git`): ключ лежит вне репо в `~/.hermes/state/id_github_deploy`, подставляется через `GIT_SSH_COMMAND="ssh -i ~/.hermes/state/id_github_deploy -o IdentitiesOnly=yes"`
 
 ## Порядок действий
 
