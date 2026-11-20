@@ -6,7 +6,23 @@
 export NOTION_API_TOKEN="$(cat ~/.hermes/state/.notion_token)"
 ```
 
-⚠️ **Права токена (проверено):** читает схемы и содержимое страниц, создаёт страницы. Обновление и удаление не проверялись — существующие страницы не трогать.
+⚠️ **Права токена (проверено):** читает схемы и содержимое страниц, создаёт страницы. `PATCH` и `DELETE` уже существующих блоков → **403 Forbidden** (проверено и на смене типа блока, и на удалении). Следствие: вложенность и порядок блоков финальны с момента `POST /v1/pages` — «накидать плоско, потом обернуть в toggle» невозможно.
+
+## Дозапись внутрь toggle
+
+Toggle создаётся сразу с первыми ≤95 детьми, остальное доливается в сам toggle (а не в страницу):
+
+```bash
+curl -sS "https://api.notion.com/v1/blocks/$PAGE_ID/children?page_size=100" \
+  -H "Authorization: Bearer $NOTION_API_TOKEN" -H "Notion-Version: 2026-03-11"
+
+curl -sS -X PATCH "https://api.notion.com/v1/blocks/$TOGGLE_ID/children" \
+  -H "Authorization: Bearer $NOTION_API_TOKEN" -H "Notion-Version: 2026-03-11" \
+  -H "Content-Type: application/json" \
+  -d '{"children": [...]}'
+```
+
+Дозапись детей в toggle работает — 403 только на изменение/удаление уже существующих блоков. Пачки ≤95 блоков; готовый цикл — `scripts/notion_md_blocks.py` в корне скилла.
 
 ## ID датасорса
 
