@@ -1,7 +1,7 @@
 ---
 name: "skill-git-dev"
 description: "Разработка скиллов в git-репе: правка, дифф, аппрув, коммит, установка."
-version: 0.2.0
+version: 0.3.0
 author: Hermes Agent
 platforms: [linux]
 ---
